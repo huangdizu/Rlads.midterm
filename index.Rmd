@@ -1,9 +1,9 @@
 ---
-author: "未命名 B01201001 一般系"
+author: "黃柏勳 310708003 交大科管"
 title: "期中考"
 subtitle: "程式設計與資料科學導論"
 date: |
-  | 2021-04-22
+  | 2022-06-02
   |
   | [Rmd Source (for TAs)](./index.Rmd){download='`r basename(getwd())`.Rmd'}
 output:
