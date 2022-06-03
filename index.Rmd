@@ -41,7 +41,9 @@ library(ggplot2)
 
 ```{r message=FALSE}
 # Write your code here
+artists <- list.files(path = "C:/Users/huang/Rlads/midterm/lyrics", full.names = F)
 
+songs <- list.files(path = "./lyrics/Lady Gaga", full.names = T)
 #### Do not modify the code below ####
 artists
 tail(songs)
@@ -73,6 +75,28 @@ tail(songs)
 
 ```{r}
 # Write your code here
+#這題看不懂，直接上助教解
+# Answer 1
+lyrics <- vector("list", length(artists))
+names(lyrics) <- artists
+
+for (name in artists) {
+   fp <- paste0("./lyrics/", name)
+   songs <- list.files(path = fp, full.names = T)
+   lyrics[[name]] <- songs
+}
+
+# Answer 2
+lyrics <- lapply(artists, function(x) {
+   fp <- paste0("./lyrics/", x)
+   list.files(path = fp, full.names = T)
+})
+
+# Answer 3 (Answer1精簡版)
+lyrics <- list()
+for (x in artists) {
+  lyrics[[x]] <- list.files(file.path("./lyrics", x), full.names = TRUE)
+}
 
 #### Do not modify the code below ####
 tail(lyrics[['Taylor Swift']], 3)
@@ -117,7 +141,11 @@ anime <- read_csv('anime.csv')
 
 ```{r}
 # Write your code here
-
+library(dplyr)
+anime <- anime %>% 
+  select(Name, Genders, Type, Source, Score, Popularity) %>%
+  rename(Genres = Genders) %>%
+  mutate(Score_new = round(Score))
 #### Do not modify the code below ####
 colnames(anime)
 cat('\n\n')
@@ -151,12 +179,13 @@ dplyr-II 製作摘要表 (10分)
 
 ```{r}
 # Write your code here
+library(dplyr)
 anime_summary <- anime %>%
-  top_n() %>%
-  filter() %>%
-  arrange() %>%
-  group_by() %>%
-  select()
+  select(-Genres, -Score_new) %>%
+  filter(!is.na(Score)) %>%
+  group_by(Type) %>%
+  top_n(-3, Popularity) %>%
+  arrange(desc(Score))
 
 #### Do not modify the code below ####
 head(anime_summary)
@@ -189,6 +218,8 @@ library(ggplot2)
 theme_set(theme_bw())
 
 # Write your code here
+ggplot(mpg) +
+  geom_point(aes(x = cty, y = hwy))
 ```
 
 
@@ -206,6 +237,11 @@ Tweak the plot (10 分)
 
 ```{r}
 # Write your code here
+ggplot(mpg, mapping = aes(x = cty, y = hwy)) +
+  geom_point() +
+  geom_smooth(method = "lm") + #  geom_smooth(method="lm", formula = y ~ x)
+  facet_wrap(vars(year)) + #facet_wrap(~factor(year))
+  labs(x = "city miles (per gallon)", y = "highway miles (per gallon)")
 ```
 
 
@@ -234,7 +270,11 @@ confirmed <- read_csv("./covid19_confirmed.csv")
 
 ```{r}
 # Write your code here
-
+library(tidyr)
+tidydf <- confirmed %>%
+  gather(key = "Date", value = "Confirmed", 
+         -c("Province", "Country"))
+  
 #### Do not modify the code below ####
 tidydf
 # Should print out:
@@ -261,7 +301,12 @@ tidydf
 
 ```{r}
 # Write your code here
-
+tidysum <- tidydf %>%
+  mutate(Date = as.Date(Date, tryFormats = "%m/%d/%y")) %>%
+  group_by(Country, Date) %>%
+  summarise(Confirmed = sum(Confirmed)) %>%
+  ungroup()
+  
 #### Do not modify the code below ####
 tidysum %>% filter(Country %in% c("Canada", "United Kingdom"), Confirmed > 1000000)
 # Should print out:
@@ -306,10 +351,31 @@ tidysum %>% filter(Country %in% c("Canada", "United Kingdom"), Confirmed > 10000
 
 ```{r}
 # Modify the code below
-compare_plot <- function(df, countries, start, end, point) {
+#Answer 1
+compare_plot <- function(df, countries, start, end, point = FALSE) {
+  data <- df %>%
+    filter(Country %in% countries) %>%
+    filter(Date >= start) %>%
+    filter(Date <= end)
   
+  if(point){
+    ggplot(data, mapping = aes(x = Date, y = Confirmed, color = Country)) +
+      geom_line() +
+      geom_point()
+  } else {
+    ggplot(data, mapping = aes(x = Date, y = Confirmed, color = Country)) +
+      geom_line()
+  }
 }
 
+#Answer 2
+compare_plot <- function(df, countries, start, end, point = FALSE) {
+  data <- df %>%
+    filter(Country %in% countries, Date >= as.Date(start) & Date <= as.Date(end))
+  ggplot(data = data, aes(x = Date, y = Confirmed, color = Country)) +
+    geom_line() +
+    if (point) geom_point()
+}
 ```
 
 <div style="background-color: #cefdce; border-radius: 5px; padding: 20px;" >
@@ -377,9 +443,33 @@ set.seed(190)
 #### Do not modify the code above ####
 
 N <- 500
+dad <- rnorm(N)
+mom <- rnorm(N)
 gender <- rbinom(N, size = 1, prob = 0.55)  # Bernoulli,  1: male,  0: female
-# Write your code here
 
+# Write your code here
+kid <- rnorm(N, mean = ifelse(gender==1, 1.5*dad + mom, 1.5*mom + dad))
+
+df <- data.frame(dad, mom, gender, kid)
+
+#助教解
+# Simulate kid's skill (moderated by gender)
+kid <- vector("double", length = N)
+for (i in seq_along(gender)) {
+  # Differential effects based on kid's gender
+  if (gender[i] == 1) 
+    m <- 1.5*dad[i] + 1.0*mom[i]
+  else 
+    m <- 1.0*dad[i] + 1.5*mom[i]
+  kid[i] <- rnorm(n = 1, mean = m)
+}
+
+df <- data.frame(
+  dad = dad,
+  mom = mom,
+  gender = gender,
+  kid = kid
+)
 #### Do not modify the code below ####
 tail(df, 10)
 summary(df)
